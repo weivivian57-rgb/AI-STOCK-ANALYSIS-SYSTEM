@@ -1,20 +1,13 @@
-"""
-stock.py
-股票数据模型
-"""
-
 from dataclasses import dataclass, field
 import pandas as pd
 
 
 @dataclass
 class Stock:
-    """
-    股票对象
-    """
 
-    code: str                     # 股票代码
-    name: str = ""                # 股票名称
+    code: str
+    name: str = ""
+
     data: pd.DataFrame = field(default_factory=pd.DataFrame)
 
     # 技术指标
@@ -28,10 +21,10 @@ class Stock:
 
     rsi: float = 0.0
 
+    # AI预测结果
+    prediction: list = field(default_factory=list)
+
     latest_price: float = 0.0
 
     def is_empty(self):
-        """
-        判断股票是否已有历史数据
-        """
         return self.data.empty
