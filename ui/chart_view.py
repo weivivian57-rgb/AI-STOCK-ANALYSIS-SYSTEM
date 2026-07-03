@@ -52,4 +52,15 @@ class ChartView(tk.Frame):
         ax3.legend(loc="upper left", frameon=False)
         ax3.grid(True, linestyle='--', alpha=0.5)
 
+        # ... (前面的 ax3 画图代码保持不变)
+        ax3.legend(loc="upper left", frameon=False)
+        ax3.grid(True, linestyle='--', alpha=0.5)
+
+        # ======================================================
+        # 💡 核心修复：在这里强行拉开三个图表的垂直间距
+        # ======================================================
+        # hspace=0.4 表示上下留出子图高度 40% 的空隙，你可以根据需要调整为 0.4 或 0.5
+        self.figure.subplots_adjust(left=0.08, right=0.95, top=0.95, bottom=0.08, hspace=0.4)
+
+        # 渲染画布
         self.canvas.draw()
