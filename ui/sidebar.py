@@ -9,6 +9,7 @@ from ui.styles import *
 
 class Sidebar(tk.Frame):
     def __init__(self, parent, on_menu_click_callback):
+        print(f"DEBUG: 正在加载的 sidebar 文件路径: {__file__}")
         super().__init__(parent, bg=BG_SIDEBAR, width=200)
         self.pack_propagate(False)
         
@@ -23,11 +24,11 @@ class Sidebar(tk.Frame):
         tk.Label(logo_frame, text="📈 AI股票", font=FONT_H1, bg=BG_SIDEBAR, fg=COLOR_PRIMARY).pack()
         tk.Label(logo_frame, text="智能分析系统", font=FONT_MAIN, bg=BG_SIDEBAR, fg=COLOR_TEXT_SUB).pack()
 
+       
         # ==========================
-        # 2. 导航菜单渲染
+        # 2. 导航菜单渲染 (精简版)
         # ==========================
-        menus = ["🏠 首页概览", "📊 股票查询", "📈 技术分析", "🤖 AI智能分析", 
-                 "📉 图表分析", "🕒 历史记录", "⭐ 自选股票", "⚙️ 系统设置"]
+        menus = ["🏠 首页概览", "🤖 AI智能分析", "🕒 历史记录", "⭐ 自选股票", "📝 意见反馈", "⚙️ 系统设置"]
         
         for i, menu in enumerate(menus):
             menu_key = menu.split(" ")[1]

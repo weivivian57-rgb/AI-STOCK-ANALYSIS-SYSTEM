@@ -18,7 +18,7 @@ COLOR_TEXT_SUB = "#888888"  # 辅助文字颜色
 # ==========================
 # 字体定义
 # ==========================
-FONT_MAIN = ("Microsoft YaHei", 10)
-FONT_TITLE = ("Microsoft YaHei", 12, "bold")
+FONT_MAIN = ("Microsoft YaHei", 14)
+FONT_TITLE = ("Microsoft YaHei", 14, "bold")
 FONT_NUMBER = ("Arial", 16, "bold")
 FONT_H1 = ("Microsoft YaHei", 16, "bold")
