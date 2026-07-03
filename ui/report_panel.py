@@ -1,158 +1,47 @@
-"""
-report_panel.py
-
-AI智能分析报告面板
-"""
-
 import tkinter as tk
-from tkinter import ttk
-
-from ui import styles
-
+from ui.styles import *
 
 class ReportPanel(tk.Frame):
-    """
-    AI分析报告区域
-    """
+    def __init__(self, parent):
+        super().__init__(parent, bg=BG_APP, width=350)
+        self.pack_propagate(False)
 
-    def __init__(self, master):
+        # === 1. 技术指标区 ===
+        self.ind_frame = tk.Frame(self, bg=BG_PANEL)
+        self.ind_frame.pack(fill=tk.X, pady=(0, 10))
+        tk.Label(self.ind_frame, text="核心技术指标", font=FONT_TITLE, bg=BG_PANEL).pack(anchor="w", padx=15, pady=10)
+        
+        self.ind_data_frame = tk.Frame(self.ind_frame, bg=BG_PANEL)
+        self.ind_data_frame.pack(fill=tk.X, padx=15, pady=5)
+        
+        # 指标Labels字典，方便后续更新
+        self.labels = {}
+        indicators = [("MA5", 0, 0), ("MA20", 0, 1), ("MACD", 1, 0), ("RSI(14)", 1, 1)]
+        for name, r, c in indicators:
+            box = tk.Frame(self.ind_data_frame, bg="#FAFAFA", bd=1, relief=tk.SOLID)
+            box.grid(row=r, column=c, padx=5, pady=5, sticky="nsew")
+            tk.Label(box, text=name, font=("Arial", 9), bg="#FAFAFA", fg=COLOR_TEXT_SUB).pack(pady=(5,0))
+            lbl_val = tk.Label(box, text="--", font=FONT_NUMBER, bg="#FAFAFA", fg=COLOR_TEXT_MAIN)
+            lbl_val.pack(pady=(0,5), padx=20)
+            self.labels[name] = lbl_val
 
-        super().__init__(
-            master,
-            bg=styles.CARD,
-            bd=1,
-            relief="solid"
-        )
+        # === 2. AI智能分析报告区 ===
+        self.ai_frame = tk.Frame(self, bg=BG_PANEL)
+        self.ai_frame.pack(fill=tk.BOTH, expand=True)
+        tk.Label(self.ai_frame, text="🤖 AI智能分析报告", font=FONT_TITLE, bg=BG_PANEL).pack(anchor="w", padx=15, pady=10)
+        
+        self.text_report = tk.Text(self.ai_frame, font=FONT_MAIN, bg=BG_PANEL, fg=COLOR_TEXT_MAIN, 
+                                   relief=tk.FLAT, wrap=tk.WORD)
+        self.text_report.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
+        self.text_report.insert(tk.END, "请在上方输入股票代码并点击查询...")
 
-        self.create_widgets()
+    def update_data(self, stock, report_text):
+        # 更新指标
+        self.labels["MA5"].config(text=f"{stock.ma5:.2f}", fg=COLOR_DANGER if stock.latest_price > stock.ma5 else COLOR_SUCCESS)
+        self.labels["MA20"].config(text=f"{stock.ma20:.2f}", fg=COLOR_DANGER if stock.latest_price > stock.ma20 else COLOR_SUCCESS)
+        self.labels["MACD"].config(text=f"{stock.macd:.2f}", fg=COLOR_DANGER if stock.macd > 0 else COLOR_SUCCESS)
+        self.labels["RSI(14)"].config(text=f"{stock.rsi:.2f}")
 
-    # =====================================================
-    # 创建组件
-    # =====================================================
-
-    def create_widgets(self):
-
-        # ==========================
-        # 标题
-        # ==========================
-
-        title_frame = tk.Frame(
-            self,
-            bg=styles.CARD
-        )
-
-        title_frame.pack(
-            fill="x",
-            padx=20,
-            pady=(15, 10)
-        )
-
-        tk.Label(
-            title_frame,
-            text="🤖 AI Analysis Report",
-            font=styles.FONT_H2,
-            bg=styles.CARD,
-            fg=styles.TITLE
-        ).pack(
-            side="left"
-        )
-
-        # ==========================
-        # 文本区域
-        # ==========================
-
-        text_frame = tk.Frame(
-            self,
-            bg=styles.CARD
-        )
-
-        text_frame.pack(
-            fill="both",
-            expand=True,
-            padx=20,
-            pady=(0, 20)
-        )
-
-        scrollbar = ttk.Scrollbar(text_frame)
-
-        scrollbar.pack(
-            side="right",
-            fill="y"
-        )
-
-        self.report_text = tk.Text(
-            text_frame,
-            wrap="word",
-            font=styles.FONT_NORMAL,
-            bg=styles.REPORT_BG,
-            fg=styles.REPORT_TEXT,
-            relief="flat",
-            padx=10,
-            pady=10,
-            yscrollcommand=scrollbar.set
-        )
-
-        self.report_text.pack(
-            fill="both",
-            expand=True
-        )
-
-        scrollbar.config(
-            command=self.report_text.yview
-        )
-
-        # 默认提示
-        self.set_report(
-            "请输入股票代码，然后点击 Analyze 开始分析。\n\n"
-            "系统将自动完成：\n"
-            "• 股票历史数据下载\n"
-            "• 技术指标计算（MA、MACD、RSI）\n"
-            "• 股价趋势预测\n"
-            "• AI 智能分析报告生成"
-        )
-
-    # =====================================================
-    # 更新报告
-    # =====================================================
-
-    def set_report(self, report):
-
-        self.report_text.config(state="normal")
-
-        self.report_text.delete("1.0", tk.END)
-
-        self.report_text.insert(
-            tk.END,
-            report
-        )
-
-        self.report_text.config(state="disabled")
-
-    # =====================================================
-    # 清空报告
-    # =====================================================
-
-    def clear(self):
-
-        self.report_text.config(state="normal")
-
-        self.report_text.delete("1.0", tk.END)
-
-        self.report_text.config(state="disabled")
-
-    # =====================================================
-    # 追加内容（调试可用）
-    # =====================================================
-
-    def append(self, text):
-
-        self.report_text.config(state="normal")
-
-        self.report_text.insert(
-            tk.END,
-            text + "\n"
-        )
-
-        self.report_text.see(tk.END)
-
-        self.report_text.config(state="disabled")
+        # 更新报告
+        self.text_report.delete(1.0, tk.END)
+        self.text_report.insert(tk.END, report_text)

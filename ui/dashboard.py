@@ -1,204 +1,65 @@
-"""
-dashboard.py
-
-数据显示区域
-"""
-
 import tkinter as tk
-from ui import styles
+from tkinter import messagebox
+import threading
 
+from ui.header import Header
+from ui.chart_view import ChartView
+from ui.report_panel import ReportPanel
+from ui.styles import BG_APP
+
+# 导入业务逻辑层
+from services.data_reader import DataReader
+from services.stock_analyzer import StockAnalyzer
+from services.trend_predictor import TrendPredictor
+from services.ai_report_generator import AIReportGenerator
 
 class Dashboard(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg=BG_APP)
+        
+        # 初始化业务引擎
+        self.reader = DataReader()
+        self.analyzer = StockAnalyzer()
+        self.predictor = TrendPredictor()
+        self.generator = AIReportGenerator()
 
-    def __init__(self, master):
+        # 1. 顶部 Header
+        self.header = Header(self, self.run_analysis)
+        self.header.pack(fill=tk.X, pady=(0, 10))
 
-        super().__init__(
-            master,
-            bg=styles.BG
-        )
+        # 2. 内容区 (左右分栏)
+        content_frame = tk.Frame(self, bg=BG_APP)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
 
-        self.create_widgets()
+        # 左侧图表
+        self.chart_view = ChartView(content_frame)
+        self.chart_view.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
 
-    # =====================================================
-    # 创建界面
-    # =====================================================
+        # 右侧报告
+        self.report_panel = ReportPanel(content_frame)
+        self.report_panel.pack(side=tk.RIGHT, fill=tk.Y)
 
-    def create_widgets(self):
+    def run_analysis(self, stock_code):
+        """执行分析流程 (使用多线程防止UI卡死)"""
+        self.report_panel.text_report.delete(1.0, tk.END)
+        self.report_panel.text_report.insert(tk.END, f"正在获取 {stock_code} 数据并进行AI分析，请稍候...")
 
-        # 标题
-        title = tk.Label(
-            self,
-            text="Stock Dashboard",
-            font=styles.FONT_TITLE,
-            bg=styles.BG,
-            fg=styles.TITLE
-        )
+        def task():
+            try:
+                # 业务流转
+                stock = self.reader.download_data(stock_code)
+                stock = self.analyzer.analyze(stock)
+                stock = self.predictor.predict(stock)
+                report = self.generator.generate(stock)
 
-        title.pack(
-            anchor="w",
-            padx=25,
-            pady=(20, 15)
-        )
+                # 回到主线程更新UI
+                self.after(0, self._update_ui, stock, report)
+            except Exception as e:
+                self.after(0, lambda: messagebox.showerror("错误", f"分析失败:\n{str(e)}"))
+                self.after(0, lambda: self.report_panel.text_report.delete(1.0, tk.END))
 
-        # ==========================
-        # 四张数据卡片
-        # ==========================
+        threading.Thread(target=task, daemon=True).start()
 
-        card_frame = tk.Frame(
-            self,
-            bg=styles.BG
-        )
-
-        card_frame.pack(
-            fill="x",
-            padx=25
-        )
-
-        self.price_value = self.create_card(
-            card_frame,
-            "Current Price",
-            "--"
-        )
-
-        self.ma20_value = self.create_card(
-            card_frame,
-            "MA20",
-            "--"
-        )
-
-        self.rsi_value = self.create_card(
-            card_frame,
-            "RSI",
-            "--"
-        )
-
-        self.macd_value = self.create_card(
-            card_frame,
-            "MACD",
-            "--"
-        )
-
-        # ==========================
-        # AI报告
-        # ==========================
-
-        report = tk.Frame(
-            self,
-            bg=styles.CARD,
-            bd=1,
-            relief="solid"
-        )
-
-        report.pack(
-            fill="both",
-            expand=True,
-            padx=25,
-            pady=20
-        )
-
-        tk.Label(
-            report,
-            text="AI Analysis Report",
-            font=styles.FONT_H2,
-            bg=styles.CARD,
-            fg=styles.TITLE
-        ).pack(
-            anchor="w",
-            padx=20,
-            pady=(15, 10)
-        )
-
-        self.report_text = tk.Text(
-            report,
-            wrap="word",
-            relief="flat",
-            bg=styles.CARD,
-            font=styles.FONT_NORMAL
-        )
-
-        self.report_text.pack(
-            fill="both",
-            expand=True,
-            padx=20,
-            pady=(0, 20)
-        )
-
-    # =====================================================
-    # 创建指标卡片
-    # =====================================================
-
-    def create_card(self, parent, title, value):
-
-        card = tk.Frame(
-            parent,
-            bg=styles.CARD,
-            bd=1,
-            relief="solid",
-            width=220,
-            height=110
-        )
-
-        card.pack(
-            side="left",
-            expand=True,
-            fill="both",
-            padx=8
-        )
-
-        card.pack_propagate(False)
-
-        tk.Label(
-            card,
-            text=title,
-            font=styles.FONT_CARD_TITLE,
-            bg=styles.CARD,
-            fg=styles.TEXT
-        ).pack(
-            anchor="w",
-            padx=18,
-            pady=(15, 5)
-        )
-
-        value_label = tk.Label(
-            card,
-            text=value,
-            font=styles.FONT_CARD_VALUE,
-            bg=styles.CARD,
-            fg=styles.PRIMARY
-        )
-
-        value_label.pack(
-            anchor="w",
-            padx=18
-        )
-
-        return value_label
-
-    # =====================================================
-    # 更新数据显示
-    # =====================================================
-
-    def update_dashboard(self, stock, report):
-
-        self.price_value.config(
-            text=f"${stock.latest_price:.2f}"
-        )
-
-        self.ma20_value.config(
-            text=f"{stock.ma20:.2f}"
-        )
-
-        self.rsi_value.config(
-            text=f"{stock.rsi:.2f}"
-        )
-
-        self.macd_value.config(
-            text=f"{stock.macd:.2f}"
-        )
-
-        self.report_text.delete("1.0", tk.END)
-
-        self.report_text.insert(
-            tk.END,
-            report
-        )
+    def _update_ui(self, stock, report):
+        self.chart_view.update_chart(stock)
+        self.report_panel.update_data(stock, report)
