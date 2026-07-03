@@ -1,3 +1,8 @@
+"""
+dashboard.py
+系统核心工作区 - 首页概览面板
+"""
+
 import tkinter as tk
 from tkinter import messagebox
 import threading
@@ -41,12 +46,30 @@ class Dashboard(tk.Frame):
 
     def run_analysis(self, stock_code):
         """执行分析流程 (使用多线程防止UI卡死)"""
+        stock_code = stock_code.strip()
+
+        # 1. 尝试从 DataReader 的映射表中查找中文名
+        if stock_code in self.reader.stock_map:
+            # 如果输入的是中文，获取到 6 位纯数字代码
+            stock_code = self.reader.stock_map[stock_code]
+        else:
+            # 如果输入的不是映射表里的中文，统一转大写处理
+            stock_code = stock_code.upper()
+
+        # 2. 补全 yfinance 需要的后缀
+        if stock_code.isdigit() and len(stock_code) == 6:
+            if stock_code.startswith(('6', '688', '900')):
+                stock_code = f"{stock_code}.SS"  # 上交所
+            else:
+                stock_code = f"{stock_code}.SZ"  # 深交所
+
+        # 更新 UI 提示语（此时 stock_code 已经是补全后的正确格式了）
         self.report_panel.text_report.delete(1.0, tk.END)
         self.report_panel.text_report.insert(tk.END, f"正在获取 {stock_code} 数据并进行AI分析，请稍候...")
 
         def task():
             try:
-                # 业务流转
+                # 业务流转（这里的 self.reader 将收到带有 .SS 或 .SZ 的正确代码）
                 stock = self.reader.download_data(stock_code)
                 stock = self.analyzer.analyze(stock)
                 stock = self.predictor.predict(stock)

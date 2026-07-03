@@ -12,17 +12,33 @@ data_reader.py
 
 import pandas as pd
 import yfinance as yf
-
+import akshare as ak  # 引入 akshare
 from models.stock import Stock
 
-
 class DataReader:
-    """
-    股票数据读取类
-    """
-
     def __init__(self):
-        pass
+        # 初始化一个空的映射字典
+        self.stock_map = {}
+        # 加载 A 股名称到代码的映射
+        self._load_stock_map()
+
+    def _load_stock_map(self):
+        print("正在初始化本地股票映射表，请稍候...")
+        try:
+            # 获取沪深京 A 股股票列表
+            df_stocks = ak.stock_info_a_code_name()
+
+            # 构建 字典: {'平安银行': '000001', '贵州茅台': '600519', ...}
+            # 注意：AkShare 返回的代码是纯数字 6 位
+            for _, row in df_stocks.iterrows():
+                name = str(row['name']).strip()
+                code = str(row['code']).strip()
+                self.stock_map[name] = code
+            print(f"成功加载 {len(self.stock_map)} 只股票映射！")
+        except Exception as e:
+            print(f"初始化股票映射表失败：{e}")
+
+
 
     def download_data(
         self,
