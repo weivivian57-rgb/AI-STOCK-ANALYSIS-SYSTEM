@@ -1,9 +1,7 @@
 """
 sidebar.py
-系统侧边栏组件 - 负责导航菜单的渲染与事件分发
+系统侧边栏组件 - 负责导航菜单的渲染与专业高亮事件分发
 """
-
-
 
 import tkinter as tk
 from ui.styles import *
@@ -14,16 +12,12 @@ class Sidebar(tk.Frame):
     导航侧边栏类
     """
 
-    # 💡 关键点：确保这里的参数名是 on_menu_click_callback
     def __init__(self, parent, on_menu_click_callback):
         super().__init__(parent, bg=BG_SIDEBAR, width=200)
         self.pack_propagate(False)  # 固定侧边栏宽度
         
-        # 将传入的回调函数绑定到实例属性上
         self.on_menu_click = on_menu_click_callback
         self.buttons = {}  # 用于管理按钮状态
-
-        # ... 以下代码保持不变 ...
 
         # ==========================
         # 1. Logo 区域
@@ -34,26 +28,35 @@ class Sidebar(tk.Frame):
         tk.Label(logo_frame, text="智能分析系统", font=FONT_MAIN, bg=BG_SIDEBAR, fg=COLOR_TEXT_SUB).pack()
 
         # ==========================
-        # 2. 导航菜单渲染与事件绑定
+        # 2. 导航菜单渲染
         # ==========================
         menus = ["🏠 首页概览", "📊 股票查询", "📈 技术分析", "🤖 AI智能分析", 
                  "📉 图表分析", "🕒 历史记录", "⭐ 自选股票", "⚙️ 系统设置"]
         
         for i, menu in enumerate(menus):
-            # 提取纯文本作为 Key (去除 Emoji 图标)
             menu_key = menu.split(" ")[1]
             
-            # 初始化时，“首页概览”默认高亮
-            btn_bg = COLOR_PRIMARY if i == 0 else BG_SIDEBAR
-            btn_fg = "#FFFFFF" if i == 0 else COLOR_TEXT_MAIN
+            # 💡 初始状态样式微调：默认状态下所有按钮背景均为纯白
+            # 初始化时，“首页概览”文字高亮为蓝色，且激活边框
+            if i == 0:
+                btn_fg = COLOR_PRIMARY
+                bd_size = 1
+                bd_color = COLOR_PRIMARY
+            else:
+                btn_fg = COLOR_TEXT_MAIN
+                bd_size = 0
+                bd_color = BG_SIDEBAR
             
-            # 使用 lambda 延迟绑定点击事件，并传入当前的菜单标识
+            # 创建一个紧包按钮的 Frame，用于模拟边框高亮效果
+            btn_border_container = tk.Frame(self, bg=bd_color, bd=bd_size)
+            btn_border_container.pack(fill=tk.X, padx=10, pady=2)
+            
             btn = tk.Button(
-                self, 
+                btn_border_container, 
                 text=menu, 
                 font=FONT_MAIN, 
-                bg=btn_bg, 
-                fg=btn_fg,
+                bg=BG_SIDEBAR,          # 💡 背景统一为纯白
+                fg=btn_fg,             # 💡 选中文字为蓝色
                 relief=tk.FLAT, 
                 anchor="w", 
                 padx=30, 
@@ -61,8 +64,10 @@ class Sidebar(tk.Frame):
                 cursor="hand2",
                 command=lambda k=menu_key: self._handle_click(k)
             )
-            btn.pack(fill=tk.X, padx=10, pady=2)
-            self.buttons[menu_key] = btn
+            btn.pack(fill=tk.X, padx=1, pady=1)
+            
+            # 将按钮和它的外层容器Frame一起缓存，方便动态修改边框颜色
+            self.buttons[menu_key] = (btn, btn_border_container)
 
         # ==========================
         # 3. 底部状态栏
@@ -72,14 +77,18 @@ class Sidebar(tk.Frame):
 
     def _handle_click(self, menu_key: str):
         """
-        处理菜单点击事件，切换高亮状态并通知主控制器
+        处理菜单点击事件，重置其他按钮，并将当前点击的菜单文字变蓝、外框高亮
         """
-        # 1. 刷新所有按钮的视觉状态（恢复默认排版）
-        for key, btn in self.buttons.items():
+        # 🔄 遍历刷新所有按钮的视觉状态
+        for key, (btn, container) in self.buttons.items():
             if key == menu_key:
-                btn.config(bg=COLOR_PRIMARY, fg="#FFFFFF")
+                # 💡 选中状态：文字变蓝，容器 Frame 变蓝（显示出边框线）
+                btn.config(fg=COLOR_PRIMARY)
+                container.config(bg=COLOR_PRIMARY, bd=1)
             else:
-                btn.config(bg=BG_SIDEBAR, fg=COLOR_TEXT_MAIN)
+                # 💡 常规状态：文字恢复暗灰，容器 Frame 隐藏（变回白色背景）
+                btn.config(fg=COLOR_TEXT_MAIN)
+                container.config(bg=BG_SIDEBAR, bd=0)
                 
-        # 2. 触发主窗口的视图切换路由
+        # 触发中心路由视图切换
         self.on_menu_click(menu_key)

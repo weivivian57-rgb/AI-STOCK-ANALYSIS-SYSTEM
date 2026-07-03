@@ -20,10 +20,18 @@ class AIReportGenerator:
         report = []
 
         # ==========================
+        # 💡 自动识别币种 (Currency Identification)
+        # ==========================
+        if stock.code.endswith((".SS", ".SZ")):
+            currency = "元"
+        else:
+            currency = "美元"
+
+        # ==========================
         # 股票信息
         # ==========================
         report.append(f"股票代码：{stock.code}")
-        report.append(f"当前价格：{stock.latest_price:.2f} 美元")
+        report.append(f"当前价格：{stock.latest_price:.2f} {currency}")
 
         # ==========================
         # MA分析
@@ -85,7 +93,7 @@ class AIReportGenerator:
 
             report.append(
                 f"根据线性回归模型预测，未来5个交易日股价预计呈{trend}趋势，"
-                f"预测价格约为 {future:.2f} 美元。"
+                f"预测价格约为 {future:.2f} {currency}。"
             )
 
         # ==========================
@@ -103,7 +111,7 @@ class AIReportGenerator:
 
         else:
             report.append(
-                "综合判断：建议继续观察，等待更加明确的买卖信号。"
+                "综合观察：建议继续观察，等待更加明确的买卖信号。"
             )
 
         return "\n".join(report)
