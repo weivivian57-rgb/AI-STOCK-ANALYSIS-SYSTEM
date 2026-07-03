@@ -63,38 +63,41 @@ class Dashboard(tk.Frame):
                 stock_code = f"{stock_code}.SS"  # 上交所
             else:
                 stock_code = f"{stock_code}.SZ"  # 深交所
-        # 💡 3. 新增风控拦截：检查最终代码是否依然包含中文
-        # ==========================
+
+        # 💡 3. 风控拦截：检查最终代码是否依然包含中文
         if re.search(r'[\u4e00-\u9fa5]', stock_code):
             messagebox.showwarning(
                 "查询失败", 
                 f"无法识别股票名称 '{stock_code}'。\n可能是网络映射表加载失败，且本地后备字典未收录该股票。\n\n请尝试直接输入 6 位数字代码。"
             )
-            return  # 拦截！直接退出函数，不执行后续的网络请求
-        # ==========================
+            return  # 拦截！直接退出函数
 
-        # 更新 UI 提示语（此时 stock_code 已经是安全、正确的格式了）
-        self.report_panel.text_report.delete(1.0, tk.END)
-        self.report_panel.text_report.insert(tk.END, f"正在获取 {stock_code} 数据并进行AI分析，请稍候...")
-
-        # 更新 UI 提示语（此时 stock_code 已经是补全后的正确格式了）
+        # 更新 UI 提示语（移除了重复的一段）
         self.report_panel.text_report.delete(1.0, tk.END)
         self.report_panel.text_report.insert(tk.END, f"正在获取 {stock_code} 数据并进行AI分析，请稍候...")
 
         def task():
             try:
-                # 业务流转（这里的 self.reader 将收到带有 .SS 或 .SZ 的正确代码）
+                print(f"\n[DEBUG Thread] 线程启动，正在获取 {stock_code} 的在线数据...")
                 stock = self.reader.download_data(stock_code)
                 stock = self.analyzer.analyze(stock)
                 stock = self.predictor.predict(stock)
                 report = self.generator.generate(stock)
 
-                # 回到主线程更新UI
+                print("[DEBUG Thread] 底层算法模型计算完毕，准备调度主线程刷新 UI...")
                 self.after(0, self._update_ui, stock, report)
+
+                # ======================================================
+                # 💡 追踪重点：触发保存前夕
+                # ======================================================
+                currency = "人民币" if stock_code.endswith((".SS", ".SZ")) else "美元"
+                print(f"[DEBUG Thread] UI 刷新指令已下发，开始接通历史记录管道...")
+                self.reader.save_to_history(stock.code, stock.latest_price, currency)
+
             except Exception as e:
+                print(f"[DEBUG Thread 崩溃] 🛑 线程内发生未捕获异常: {e}")
                 self.after(0, lambda: messagebox.showerror("错误", f"分析失败:\n{str(e)}"))
                 self.after(0, lambda: self.report_panel.text_report.delete(1.0, tk.END))
-
         threading.Thread(target=task, daemon=True).start()
 
     def _update_ui(self, stock, report):

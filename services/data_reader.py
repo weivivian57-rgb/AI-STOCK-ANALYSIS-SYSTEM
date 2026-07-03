@@ -79,7 +79,73 @@ class DataReader:
                 "台积电": "TSM"
             }
 
+    # ==========================
+    # 💡 新增：历史记录持久化管理
+    # ==========================
+    def save_to_history(self, stock_code, latest_price, currency):
+        """将单次查询成功的股票记录持久化写入本地 JSON 文件 (带 DEBUG 日志)"""
+        import json
+        import os
+        from datetime import datetime
 
+        print(f"\n[DEBUG 1] 进入 save_to_history 方法, 收到参数: {stock_code}, {latest_price}, {currency}")
+        history_file = "history.json"
+        
+        new_record = {
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "code": stock_code,
+            "price": f"{latest_price:.2f} {currency}"
+        }
+
+        records = []
+        if os.path.exists(history_file):
+            try:
+                with open(history_file, "r", encoding="utf-8") as f:
+                    content = f.read().strip()
+                    if content:  # 确保文件不是完全空的 0 字节
+                        records = json.loads(content)
+                print(f"[DEBUG 2] 成功读取现有历史记录，当前已有 {len(records)} 条")
+            except Exception as e:
+                print(f"[DEBUG 警告] 读取/解析旧 history.json 失败, 原因: {e}, 将初始化为空列表")
+                records = []
+
+        # 插入新记录
+        records.insert(0, new_record)
+        records = records[:100]
+        print(f"[DEBUG 3] 准备写入文件，当前队列总计: {len(records)} 条")
+
+        try:
+            with open(history_file, "w", encoding="utf-8") as f:
+                json.dump(records, f, ensure_ascii=False, indent=4)
+            print("[DEBUG 4] 💾 磁盘写入成功！history.json 已成功更新。")
+        except Exception as e:
+            print(f"[DEBUG 错误] ❌ 物理写入磁盘失败! 原因: {e}")
+
+    def load_history(self):
+        """从本地 JSON 文件读取完整的历史记录"""
+        import json
+        import os
+        
+        history_file = "history.json"
+        if not os.path.exists(history_file):
+            return []
+        try:
+            with open(history_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+
+    def clear_history(self):
+        """一键清空本地历史记录"""
+        import os
+        history_file = "history.json"
+        if os.path.exists(history_file):
+            try:
+                os.remove(history_file)
+                return True
+            except Exception:
+                return False
+        return True
 
     def download_data(
         self,
