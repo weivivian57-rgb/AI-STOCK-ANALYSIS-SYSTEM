@@ -1,63 +1,97 @@
 """
 header.py
-系统顶部工具栏组件 - 负责股票代码输入与查询事件触发
+全局组件 - 顶部查询与状态头部
 """
 
 import tkinter as tk
-from tkinter import ttk
-from ui.styles import *
+import time
+from ui.styles import BG_PANEL, COLOR_PRIMARY, COLOR_TEXT_MAIN, COLOR_TEXT_SUB
 
 
 class Header(tk.Frame):
     def __init__(self, parent, on_search_callback):
-        super().__init__(parent, bg=BG_PANEL)
-        self.on_search_callback = on_search_callback
+        super().__init__(parent, bg=BG_PANEL, height=70, bd=1, relief=tk.FLAT)
+        self.pack_propagate(False)
+        self.on_search = on_search_callback
 
-        # 股票代码输入
-        tk.Label(self, text="股票代码:", font=FONT_MAIN, bg=BG_PANEL).pack(side=tk.LEFT, padx=(20, 5))
-        self.entry_code = ttk.Entry(self, width=15, font=FONT_MAIN)
-        self.entry_code.pack(side=tk.LEFT, padx=5)
+        # ======================================================
+        # 左侧：查询区域
+        # ======================================================
+        tk.Label(
+            self, 
+            text="股票代码:", 
+            font=("Microsoft YaHei", 12), 
+            bg=BG_PANEL, 
+            fg=COLOR_TEXT_MAIN
+        ).pack(side=tk.LEFT, padx=(20, 10))
+
+        self.entry_code = tk.Entry(
+            self, 
+            font=("Microsoft YaHei", 12), 
+            width=15,
+            bd=1,
+            relief=tk.SOLID
+        )
+        self.entry_code.pack(side=tk.LEFT, padx=5, pady=15)
         self.entry_code.insert(0, "AAPL")
 
-        # ==========================
-        # 💡 Mac 兼容性修复：使用 Label 模拟 Button 突破背景色限制
-        # ==========================
+       # ======================================================
+        # 💡 终极“障眼法”：Frame (蓝色底) + Label (文字)
+        # ======================================================
+        # 1. 外层容器负责背景色
+        self.btn_container = tk.Frame(self, bg="#3B82F6", bd=0)
+        self.btn_container.pack(side=tk.LEFT, padx=15)
+        
+        # 2. 内层 Label 负责文字，背景设为透明 (systemTransparent 不可用时用父容器色)
         self.btn_search = tk.Label(
-            self, 
+            self.btn_container, 
             text="查询分析", 
-            font=FONT_MAIN, 
-            bg=COLOR_PRIMARY,     # 完美呈现主色调蓝色
-            fg="#FFFFFF",         # 纯白文字
-            padx=20, 
-            pady=6, 
-            cursor="hand2"        # 鼠标放上去变成小手
+            font=("Microsoft YaHei", 11, "bold"),
+            bg="#3B82F6",    # 必须和父容器颜色一致
+            fg="#FFFFFF",
+            padx=15,
+            pady=8,
+            cursor="hand2"
         )
-        self.btn_search.pack(side=tk.LEFT, padx=10, pady=15)
+        self.btn_search.pack()
+        
+        # 3. 绑定点击
+        self.btn_search.bind("<Button-1>", lambda event: self._handle_search())
+        
+        # 4. 悬停反馈 (同时改变容器和 Label 的颜色)
+        def on_enter(e):
+            self.btn_container.config(bg="#2563EB")
+            self.btn_search.config(bg="#2563EB")
+            
+        def on_leave(e):
+            self.btn_container.config(bg="#3B82F6")
+            self.btn_search.config(bg="#3B82F6")
+        
+        self.btn_search.bind("<Enter>", on_enter)
+        self.btn_search.bind("<Leave>", on_leave)
+        # ======================================================
+        # 右侧：实时动态时间时钟
+        # ======================================================
+        self.time_label = tk.Label(
+            self, 
+            text="🕒 正在加载时间...", 
+            font=("Microsoft YaHei", 11), 
+            bg=BG_PANEL, 
+            fg=COLOR_TEXT_SUB
+        )
+        # 确保挂载在右侧
+        self.time_label.pack(side=tk.RIGHT, padx=25)
 
-        # 绑定点击与悬浮交互事件
-        self.btn_search.bind("<Button-1>", lambda e: self._handle_search())
-        self.btn_search.bind("<Enter>", self._on_hover_enter)
-        self.btn_search.bind("<Leave>", self._on_hover_leave)
-
-    def _on_hover_enter(self, event):
-        """鼠标悬浮时的反馈色（略微提亮）"""
-        if self.btn_search.cget("text") == "查询分析":
-            self.btn_search.config(bg="#40A9FF")
-
-    def _on_hover_leave(self, event):
-        """鼠标移出时恢复主色调"""
-        if self.btn_search.cget("text") == "查询分析":
-            self.btn_search.config(bg=COLOR_PRIMARY)
+        # 启动心跳引擎
+        self._update_clock()
 
     def _handle_search(self):
-        code = self.entry_code.get().strip().upper()
+        code = self.entry_code.get().strip()
         if code:
-            # 点击后变为禁用视觉状态（浅蓝色 + 文字改变）
-            self.btn_search.config(text="分析中...", bg="#A0CFFF")
-            self.update()  # 强制立即刷新 UI
-            
-            # 触发主程序的查询路由
-            self.on_search_callback(code)
-            
-            # 恢复正常状态
-            self.btn_search.config(text="查询分析", bg=COLOR_PRIMARY)
+            self.on_search(code)
+
+    def _update_clock(self):
+        """每秒更新时间"""
+        current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+        self.time_label.config(text=f"🕒 {current_time}")
+        self.after(1000, self._update_clock)
