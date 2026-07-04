@@ -28,7 +28,8 @@ class Dashboard(tk.Frame):
         self.generator = AIReportGenerator()
 
         # 1. 顶部 Header
-        self.header = Header(self, self.run_analysis)
+        # 传入第二参数（查询逻辑）和第三参数（加入自选逻辑）
+        self.header = Header(self, self.run_analysis, self._add_to_watchlist_action)
         self.header.pack(fill=tk.X, pady=(0, 10))
 
         # 2. 内容区 (左右分栏)
@@ -116,15 +117,17 @@ class Dashboard(tk.Frame):
         yf_code, stock_name = self.reader.resolve_stock_code(keyword)
 
         if not yf_code:
+            from tkinter import messagebox
             messagebox.showwarning("查询失败", f"未能检索到与 '{keyword}' 相关的股票。")
             return
 
-        # 💡 [核心逻辑]：自动生成报告区间文案
-        # 如果 start_date 为 None，说明用户留空，默认就是过去5年
+        # 自动生成报告区间文案
         report_time_range = f"{start_date} 至 {end_date}" if start_date else "过去5年 (全量/稳定区间)"
 
         for lbl in self.metric_labels.values():
             lbl.config(text="...", fg=COLOR_TEXT_SUB)
+        
+        # ❌ 已经把你原本放在这里的报错代码删除了
             
         self.report_panel.text_report.delete(1.0, tk.END)
         self.report_panel.text_report.insert(
@@ -134,19 +137,19 @@ class Dashboard(tk.Frame):
 
         def task():
             try:
+                # 1. 真实的数据对象在这里诞生，它的名字叫 `stock`
                 stock = self.reader.download_data(yf_code, start=start_date, end=end_date)
                 stock.name = stock_name  
-                
-                # 💡 [重要补充]：将时间跨度信息塞进 stock 对象，或者直接传给 generator
-                # 这样 AI 在生成报告时就能准确知道它分析的是什么区间
                 stock.time_range = report_time_range 
                 
                 stock = self.analyzer.analyze(stock)
                 stock = self.predictor.predict(stock)
-                
-                # 💡 确保报告生成器可以读到这个跨度信息
                 report = self.generator.generate(stock)
 
+                # 💡 [关键修复]：数据完全准备好之后，存入 self.current_stock 供“加入自选”按钮调用
+                self.current_stock = stock
+
+                # 更新界面
                 self.after(0, self._update_ui, stock, report)
 
                 currency = "人民币" if yf_code.endswith((".SS", ".SZ")) else ("港币" if yf_code.endswith(".HK") else "美元")
@@ -155,9 +158,11 @@ class Dashboard(tk.Frame):
 
             except Exception as e:
                 err_msg = str(e)
+                from tkinter import messagebox
                 self.after(0, lambda: messagebox.showerror("错误", f"分析失败:\n{err_msg}"))
                 self.after(0, lambda: self.report_panel.text_report.delete(1.0, tk.END))
                 
+        # 启动后台线程执行 task
         threading.Thread(target=task, daemon=True).start()
 
     def _update_ui(self, stock, report):
@@ -191,3 +196,29 @@ class Dashboard(tk.Frame):
     def _safe_update_metric(self, key, value, color):
         if key in self.metric_labels:
             self.metric_labels[key].config(text=value, fg=color)
+
+    def _add_to_watchlist_action(self):
+        """将当前查询的股票加入自选股面板"""
+        from tkinter import messagebox
+        
+        # 1. 校验当前是否有查询结果
+        # 💡 假设你把当前查询的股票对象存在 self.current_stock 中。
+        # 如果你用的是别的变量名（比如 self.stock_data），请相应替换。
+        if not hasattr(self, 'current_stock') or self.current_stock is None:
+            messagebox.showwarning("提示", "请先输入代码并获取分析数据，再加入自选！")
+            return
+            
+        stock = self.current_stock
+        
+        # 2. 尝试获取主窗口中的 watchlist_panel 实例并添加数据
+        try:
+            main_window = self.winfo_toplevel()
+            # 确保主窗口已经初始化了自选面板
+            if hasattr(main_window, 'watchlist_panel'):
+                # 调用自选面板的新增方法 (我们下一步去写这个方法)
+                main_window.watchlist_panel.add_dynamic_stock(stock)
+                messagebox.showinfo("成功", f"⭐ 已将 {stock.name} ({stock.code}) 加入自选！")
+            else:
+                print("[错误] 未在主窗口找到 watchlist_panel 实例")
+        except Exception as e:
+            messagebox.showerror("错误", f"加入自选失败: {e}")

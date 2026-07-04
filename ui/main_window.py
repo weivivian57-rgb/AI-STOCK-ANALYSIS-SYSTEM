@@ -11,13 +11,14 @@ from ui.styles import BG_APP
 from ui.history_panel import HistoryPanel
 from ui.feedback_panel import FeedbackPanel
 from ui.ai_analysis_view import AIAnalysisView
+from ui.watchlist_panel import WatchlistPanel
 
 
 class MainWindow:
     """
     应用主窗口类（视图总控制器）
     """
-    
+
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("AI股票智能分析系统")
@@ -46,7 +47,15 @@ class MainWindow:
         self.main_container.grid_rowconfigure(0, weight=1)
         self.main_container.grid_columnconfigure(0, weight=1)
 
-        # 3. 预加载首页
+        # 3. 预加载首页和自选股票面板
+        self.watchlist_panel = WatchlistPanel(self.main_container)
+        
+        # 💡 [关键修复] 将面板对象挂载到真正的 tkinter root 节点上
+        self.root.watchlist_panel = self.watchlist_panel 
+        
+        self.watchlist_panel.grid(row=0, column=0, sticky="nsew")
+        self.sub_views["自选股票"] = self.watchlist_panel
+
         self.sub_views["首页概览"] = Dashboard(self.main_container)
         self.sub_views["首页概览"].grid(row=0, column=0, sticky="nsew")
         
@@ -64,14 +73,14 @@ class MainWindow:
                 self.sub_views[menu_key] = HistoryPanel(self.main_container)
             elif menu_key == "意见反馈": 
                 self.sub_views[menu_key] = FeedbackPanel(self.main_container)
-            elif menu_key == "AI智能分析":  # 💡 稳稳地插在中间
+            elif menu_key == "AI智能分析":  
                 self.sub_views[menu_key] = AIAnalysisView(self.main_container)
-            else:                           # 💡 只有最后这一个兜底的 else
+            # 💡 因为"自选股票"已经在 __init__ 里注册过了，所以不需要在这里 elif
+            else:                           
                 self.sub_views[menu_key] = PlaceholderView(self.main_container, module_name=menu_key)
             
-            # 统一给新生成的视图网格化挂载（只写一次即可，不用重复）
+            # 统一给新生成的视图网格化挂载
             self.sub_views[menu_key].grid(row=0, column=0, sticky="nsew")
-        
         
         if menu_key == "历史记录":
             self.sub_views["历史记录"].refresh_data()
