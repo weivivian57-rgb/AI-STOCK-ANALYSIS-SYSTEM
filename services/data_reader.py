@@ -229,3 +229,16 @@ class DataReader:
                 return json.load(f)
         except:
             return []
+        
+    def clear_history(self):
+        """彻底清空历史记录文件"""
+        try:
+            # 这里的路径必须和你 init 里的 self.history_file 保持一致
+            # 如果你之前改了路径逻辑，确保这里指向同一个文件
+            with open(self.history_file, 'w', encoding='utf-8') as f:
+                json.dump([], f, indent=4)
+            print("[调试] history.json 已重置为空列表")
+            return True
+        except Exception as e:
+            print(f"[错误] 清空失败: {e}")
+            return False
