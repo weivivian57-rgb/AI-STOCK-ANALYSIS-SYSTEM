@@ -64,7 +64,7 @@ class WatchlistPanel(tk.Frame):
             lbl = tk.Label(
                 self.scrollable_frame, 
                 text=text, 
-                font=("Microsoft YaHei", 10), 
+                font=("Microsoft YaHei", 12), 
                 bg=header_bg, 
                 fg="#6B7280"
             )
@@ -135,23 +135,23 @@ class WatchlistPanel(tk.Frame):
         name_frame = tk.Frame(self.scrollable_frame, bg=bg_color)
         name_frame.grid(row=grid_row, column=0, sticky="w", padx=20, pady=12)
         tk.Label(name_frame, text=name, font=("Microsoft YaHei", 12, "bold"), bg=bg_color, fg="#111827").pack(anchor="w")
-        tk.Label(name_frame, text=code, font=("Microsoft YaHei", 10), bg=bg_color, fg="#9CA3AF").pack(anchor="w", pady=(2, 0))
+        tk.Label(name_frame, text=code, font=("Microsoft YaHei", 12), bg=bg_color, fg="#9CA3AF").pack(anchor="w", pady=(2, 0))
         
         # 2. 当前价
         tk.Label(self.scrollable_frame, text=price, font=("Microsoft YaHei", 12, "bold"), bg=bg_color, fg="#111827").grid(row=grid_row, column=1)
         
         # 3. 涨跌幅
         change_text = f"{change_val} ({change_pct})"
-        tk.Label(self.scrollable_frame, text=change_text, font=("Microsoft YaHei", 11, "bold"), bg=bg_color, fg=color_trend).grid(row=grid_row, column=2)
+        tk.Label(self.scrollable_frame, text=change_text, font=("Microsoft YaHei", 12, "bold"), bg=bg_color, fg=color_trend).grid(row=grid_row, column=2)
         
         # 4. 成交量
-        tk.Label(self.scrollable_frame, text=vol, font=("Microsoft YaHei", 11, "bold"), bg=bg_color, fg="#111827").grid(row=grid_row, column=3)
+        tk.Label(self.scrollable_frame, text=vol, font=("Microsoft YaHei", 12, "bold"), bg=bg_color, fg="#111827").grid(row=grid_row, column=3)
         
         # 5. 总市值
-        tk.Label(self.scrollable_frame, text=cap, font=("Microsoft YaHei", 11, "bold"), bg=bg_color, fg="#111827").grid(row=grid_row, column=4)
+        tk.Label(self.scrollable_frame, text=cap, font=("Microsoft YaHei", 12, "bold"), bg=bg_color, fg="#111827").grid(row=grid_row, column=4)
         
         # 6. 年初至今
-        tk.Label(self.scrollable_frame, text=ytd_pct, font=("Microsoft YaHei", 11, "bold"), bg=bg_color, fg=color_trend).grid(row=grid_row, column=5)
+        tk.Label(self.scrollable_frame, text=ytd_pct, font=("Microsoft YaHei", 12, "bold"), bg=bg_color, fg=color_trend).grid(row=grid_row, column=5)
         
         # 7. 💡 操作图标区域（已剔除无效的铃铛和省略号）
         action_frame = tk.Frame(self.scrollable_frame, bg=bg_color)

@@ -57,7 +57,7 @@ class AIAnalysisView(tk.Frame):
         self.btn_search = tk.Label(
             self.btn_container, 
             text="生成研报", 
-            font=("Microsoft YaHei", 11, "bold"),
+            font=("Microsoft YaHei", 12, "bold"),
             bg="#3B82F6",    
             fg="#FFFFFF",
             padx=15,
@@ -89,7 +89,7 @@ class AIAnalysisView(tk.Frame):
         
         self.text_area = tk.Text(
             container, 
-            font=("Microsoft YaHei", 11), 
+            font=("Microsoft YaHei", 14), 
             bg="#FFFFFF", 
             fg="#334155",
             spacing1=8,
@@ -105,8 +105,8 @@ class AIAnalysisView(tk.Frame):
         scrollbar.config(command=self.text_area.yview)
         
         self.text_area.tag_config("title_tag", font=("Microsoft YaHei", 14, "bold"), foreground="#1E3A8A")
-        self.text_area.tag_config("subtitle_tag", font=("Microsoft YaHei", 12, "bold"), foreground="#2563EB")
-        self.text_area.tag_config("table_tag", font=("Courier", 11), foreground="#0F172A", background="#F8FAFC")
+        self.text_area.tag_config("subtitle_tag", font=("Microsoft YaHei", 14, "bold"), foreground="#2563EB")
+        self.text_area.tag_config("table_tag", font=("Courier", 12), foreground="#0F172A", background="#F8FAFC")
         self.text_area.tag_config("loading_tag", font=("Microsoft YaHei", 12, "italic"), foreground="#94A3B8")
 
         self.text_area.insert(tk.END, "💡 智能分析双引擎已就绪。\n请输入标的代码，系统将优先尝试 API 实时联网；若无 API 则自动降级为高保真专业研报推演。")
@@ -179,7 +179,7 @@ class AIAnalysisView(tk.Frame):
         self.text_area.insert(tk.END, text)
 
     # ---------------------------------------------------------
-    # 下方为高保真本地降级数据的逻辑 (老师答辩防挂科护城河)
+    # 下方为高保真本地降级数据的逻辑 
     # ---------------------------------------------------------
     def _generate_leon_micro_real_report(self):
         return {
