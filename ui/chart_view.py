@@ -3,6 +3,13 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import pandas as pd
 from ui.styles import *
+import matplotlib.image as mpimg  
+import os
+from matplotlib.font_manager import FontProperties
+
+# 找到 Mac 系统中支持中文的字体
+font_path = "/System/Library/Fonts/PingFang.ttc"  # 或者 "/Library/Fonts/Arial Unicode MS.ttf"
+font_prop = FontProperties(fname=font_path, size=14)
 
 class ChartView(tk.Frame):
     def __init__(self, parent):
@@ -22,8 +29,50 @@ class ChartView(tk.Frame):
 
     def update_chart(self, stock):
         self.figure.clear()
+    
+    
+        # 判断是否为空状态
+        is_empty = (stock is None or not hasattr(stock, 'data') or stock.data is None or stock.data.empty)
+        
+        if is_empty:
+            ax = self.figure.add_subplot(111)
+            
+            # 使用绝对路径定位
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            img_path = os.path.join(base_dir, "assets", "empty_state.png")
+            
+            print(f"[DEBUG] 图片路径检查: {img_path}")
+            print(f"[DEBUG] 文件是否存在: {os.path.exists(img_path)}")
+
+            if os.path.exists(img_path):
+                try:
+                    img = mpimg.imread(img_path)
+                    # 缩小图片并居中
+                    ax.imshow(img, extent=[-0.5, 0.5, -0.5, 0.5])
+                    # 文字放在下方
+                    ax.text(0, -0.5, '请输入股票名称或代码\n生成分析数据', 
+                            ha='center', va='center', 
+                            fontproperties=font_prop, color='#64748B')
+                except Exception as e:
+                    print(f"[ERROR] 图片渲染失败: {e}")
+                    # 如果渲染出错， fallback 到仅显示文字
+                    ax.text(0, 0, '请输入股票名称或代码\n(图片加载失败)', 
+                            ha='center', va='center', fontproperties=font_prop, color='red')
+            else:
+                # 图片不存在时的标准显示
+                ax.text(0, 0, '请输入股票名称或代码\n生成分析数据', 
+                        ha='center', va='center', fontproperties=font_prop, color='#64748B')
+            
+            ax.set_xlim(-1, 1)
+            ax.set_ylim(-1, 1)
+            ax.axis('off')
+            self.canvas.draw()
+            return
+        # 3. 如果有数据，走正常的绘图逻辑
+        print("[调试] 正在渲染股票数据图表...")
         df = stock.data
-        if df.empty: return
+        # ... 你的原有的绘图代码 (ax1, ax2, ax3 等)
+        self.canvas.draw()
 
         close = df["Close"]
         

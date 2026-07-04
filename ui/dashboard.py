@@ -44,7 +44,9 @@ class Dashboard(tk.Frame):
 
         self.chart_view = ChartView(left_frame)
         self.chart_view.pack(fill=tk.BOTH, expand=True)
-
+        # 💡 强制在这里初始化空状态！
+        # 💡 使用 after 延迟，确保画布准备好后再绘制图片
+        self.after(100, lambda: self.chart_view.update_chart(None))
         # ======================================================
         # 右侧：数据看板与 AI 报告 (固定宽度 380)
         # ======================================================
