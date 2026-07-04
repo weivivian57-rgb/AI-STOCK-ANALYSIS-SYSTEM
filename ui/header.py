@@ -29,11 +29,11 @@ class Header(tk.Frame):
         self.entry_code = tk.Entry(
             query_container, 
             font=("Microsoft YaHei", 14), 
-            bg="#F9FAFB",
+            bg="#FFFFFF",
             fg="#9CA3AF",                  # 初始灰色字（占位符颜色）
-            bd=1, 
-            relief=tk.SOLID,
-            highlightbackground="#FFFFFF", # 默认浅灰边框
+            bd=0, 
+            relief=tk.FLAT,
+            highlightbackground="#DCDCDC", # 默认浅灰边框
             highlightcolor="#3480FB",      # 获得焦点时的现代科技蓝边框
             highlightthickness=1,
             width=30

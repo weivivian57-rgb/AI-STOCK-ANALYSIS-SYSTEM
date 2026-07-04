@@ -8,6 +8,7 @@ import threading
 import time
 import requests
 import json
+from tkinter import messagebox
 
 class AIAnalysisView(tk.Frame):
     def __init__(self, parent):
@@ -16,8 +17,11 @@ class AIAnalysisView(tk.Frame):
         # ======================================================
         # 1. 顶部操作区 (左侧标题 + 右侧独立查询框)
         # ======================================================
-        top_frame = tk.Frame(self, bg="#FFFFFF", bd=1, relief=tk.SOLID, highlightbackground="#E2E8F0")
-        top_frame.pack(fill=tk.X, padx=15, pady=(15, 5))
+        # ======================================================
+        # 1. 顶部操作区 (💡 已彻底移除黑边框与独立卡片阴影，与全局完美对齐)
+        # ======================================================
+        top_frame = tk.Frame(self, bg="#FFFFFF", bd=0, highlightthickness=0)
+        top_frame.pack(fill=tk.X, padx=20, pady=(20, 10)) # 统一使用和自选股、反馈一致的间距
         
         self.title_label = tk.Label(
             top_frame, 
@@ -33,26 +37,28 @@ class AIAnalysisView(tk.Frame):
         search_container = tk.Frame(top_frame, bg="#FFFFFF")
         search_container.pack(side=tk.RIGHT, padx=15, pady=10)
 
-        tk.Label(
-            search_container, 
-            text="股票代码:", 
-            font=("Microsoft YaHei", 12), 
-            bg="#FFFFFF", 
-            fg="#334155"
-        ).pack(side=tk.LEFT, padx=(0, 10))
-
+        # 💡 [样式同步] 移除原有的 "股票代码:" 标签，直接使用占位符与 400px 宽输入框
+        self.placeholder_text = "请输入股票名称或代码"
+        
+        # 💡 [像素级打磨] 彻底废除双重边框，实现纯净单线切换
         self.entry_code = tk.Entry(
             search_container, 
-            font=("Microsoft YaHei", 12), 
-            width=15,
-            bd=1,
-            relief=tk.SOLID
+            font=("Microsoft YaHei", 14), 
+            bg="#F9FAFB",
+            fg="#9CA3AF",                  # 初始灰色字（占位符颜色）
+            
+            bd=0,                          # 💡 [关键修改] 彻底关闭组件自带的传统线宽
+            relief=tk.FLAT,                # 💡 [关键修改] 传统边框改为 FLAT 纯平无痕
+            highlightbackground="#E5E7EB", # 默认浅灰边框（此时完全由高亮框单独扮演边框角色）
+            highlightcolor="#3B82F6",      # 获得焦点时，单线完美、干净地切换为现代科技蓝
+            highlightthickness=1,          # 边框厚度保持 1 像素
+            width=38                       # 宽度扩展至约 400px
         )
-        self.entry_code.pack(side=tk.LEFT, ipady=4)
-        self.entry_code.insert(0, "605358") 
+        self.entry_code.pack(side=tk.LEFT, padx=(0, 15), ipady=5)
+        self.entry_code.insert(0, self.placeholder_text)
 
         self.btn_container = tk.Frame(search_container, bg="#3B82F6", bd=0)
-        self.btn_container.pack(side=tk.LEFT, padx=15)
+        self.btn_container.pack(side=tk.LEFT, padx=8)
         
         self.btn_search = tk.Label(
             self.btn_container, 
@@ -66,8 +72,13 @@ class AIAnalysisView(tk.Frame):
         )
         self.btn_search.pack()
         
+        # 绑定事件
         self.btn_search.bind("<Button-1>", lambda e: self._handle_search())
         self.entry_code.bind("<Return>", lambda e: self._handle_search())
+        
+        # 💡 [交互同步] 绑定焦点事件，完美模拟现代化 Placeholder
+        self.entry_code.bind("<FocusIn>", self._on_focus_in)
+        self.entry_code.bind("<FocusOut>", self._on_focus_out)
         
         def on_enter(e):
             self.btn_container.config(bg="#2563EB")
@@ -81,12 +92,16 @@ class AIAnalysisView(tk.Frame):
         # ======================================================
         # 2. 下方内容滚动容器
         # ======================================================
-        container = tk.Frame(self, bg="#F1F5F9")
-        container.pack(fill=tk.BOTH, expand=True, padx=15, pady=10)
+       # ======================================================
+        # 2. 下方内容滚动容器 (保持撑满，两边 padx 与顶部对齐)
+        # ======================================================
+        container = tk.Frame(self, bg="#FFFFFF", bd=0, highlightthickness=0)
+        container.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20)) # fill=tk.BOTH 确保纵向撑满
         
         scrollbar = tk.Scrollbar(container)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
+        # 💡 [全新重构] 彻底移除黑细边框，实现纯平全面屏研报视效
         self.text_area = tk.Text(
             container, 
             font=("Microsoft YaHei", 14), 
@@ -96,8 +111,9 @@ class AIAnalysisView(tk.Frame):
             spacing2=4,
             padx=25,
             pady=25,
-            bd=1,
-            relief=tk.SOLID,
+            bd=0,                           # 💡 [核心修改] 线宽设为 0
+            relief=tk.FLAT,                 # 💡 [核心修改] 样式改为扁平 FLAT
+            highlightthickness=0,           # 💡 [核心修改] 移除点进去时的残留焦点边框
             yscrollcommand=scrollbar.set,
             wrap=tk.WORD
         )
@@ -110,11 +126,30 @@ class AIAnalysisView(tk.Frame):
         self.text_area.tag_config("loading_tag", font=("Microsoft YaHei", 12, "italic"), foreground="#94A3B8")
 
         self.text_area.insert(tk.END, "💡 智能分析双引擎已就绪。\n请输入标的代码，系统将优先尝试 API 实时联网；若无 API 则自动降级为高保真专业研报推演。")
+    # ======================================================
+    # 交互控制逻辑
+    # ======================================================
+    def _on_focus_in(self, event):
+        """当用户点击输入框、光标闪烁（获得焦点）时触发"""
+        if self.entry_code.get() == self.placeholder_text:
+            self.entry_code.delete(0, tk.END)
+            self.entry_code.config(fg="#111827") # 文字切回深黑色
+
+    def _on_focus_out(self, event):
+        """当用户点击别处、光标离开（失去焦点）时触发"""
+        if not self.entry_code.get().strip():
+            self.entry_code.insert(0, self.placeholder_text)
+            self.entry_code.config(fg="#9CA3AF") # 文字切回浅灰色
 
     def _handle_search(self):
         code = self.entry_code.get().strip()
-        if code:
-            self.load_stock_report(code)
+        
+        # 💡 [关键拦截] 防止把占位符当成股票代码传给后端
+        if code == self.placeholder_text or not code:
+            messagebox.showinfo("提示", "请输入有效的股票名称或代码")
+            return
+            
+        self.load_stock_report(code)
 
     def load_stock_report(self, stock_code: str):
         self.title_label.config(text=f"🤖 AI智能分析 - 正在处理 {stock_code} ...")

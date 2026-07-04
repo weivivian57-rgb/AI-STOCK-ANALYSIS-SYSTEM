@@ -62,7 +62,7 @@ class Dashboard(tk.Frame):
         tk.Label(
             metrics_container, 
             text="核心技术指标", 
-            font=("Microsoft YaHei", 12, "bold"), 
+            font=("Microsoft YaHei", 14, "bold"), 
             bg=BG_APP, 
             fg="#1E293B",
             anchor="w"
@@ -99,7 +99,7 @@ class Dashboard(tk.Frame):
             r = idx // 2
             c = idx % 2
             
-            card = tk.Frame(self.grid_container, bg="#FFFFFF", bd=1, relief=tk.SOLID, highlightbackground="#E2E8F0")
+            card = tk.Frame(self.grid_container, bg="#FFFFFF", bd=0, relief=tk.FLAT, highlightbackground="#E5E7EB")
             card.grid(row=r, column=c, padx=4, pady=3, sticky="nsew")
             
             tk.Label(card, text=item["title"], font=("Microsoft YaHei", 9), bg="#FFFFFF", fg=COLOR_TEXT_SUB).pack(pady=(6, 0))

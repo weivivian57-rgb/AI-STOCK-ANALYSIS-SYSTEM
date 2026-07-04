@@ -53,8 +53,10 @@ class ReportPanel(tk.Frame):
             font=FONT_MAIN, 
             bg="#F8FAFC", 
             fg=COLOR_TEXT_MAIN, 
-            relief=tk.SOLID, 
-            bd=1,
+            relief=tk.FLAT, 
+            bd=0,
+    
+            highlightthickness=0, 
             wrap=tk.WORD,
             padx=10,
             pady=10
