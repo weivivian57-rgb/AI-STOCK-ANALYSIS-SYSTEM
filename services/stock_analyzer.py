@@ -14,7 +14,9 @@ class StockAnalyzer:
     """
 
     def analyze(self, stock: Stock) -> Stock:
-
+        def analyze(self, stock):
+          print(f"DEBUG: 分析器收到的数据条数: {len(stock.data)}")
+           # ... 原有代码 ...
         if stock.data.empty:
             raise ValueError("股票数据为空！")
 

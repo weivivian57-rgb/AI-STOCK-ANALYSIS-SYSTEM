@@ -10,6 +10,7 @@ from ui.placeholder_view import PlaceholderView
 from ui.styles import BG_APP
 from ui.history_panel import HistoryPanel
 from ui.feedback_panel import FeedbackPanel
+from ui.ai_analysis_view import AIAnalysisView
 
 
 class MainWindow:
@@ -55,25 +56,29 @@ class MainWindow:
         if self.current_view == self.sub_views.get(menu_key):
             return
 
+        # ======================================================
+        # 统一的路由创建逻辑链（确保只有一个 if，多个 elif，一个 else）
+        # ======================================================
         if menu_key not in self.sub_views:
-            # 💡 必须精确匹配菜单键名！
             if menu_key == "历史记录":
                 self.sub_views[menu_key] = HistoryPanel(self.main_container)
-            elif menu_key == "意见反馈": # 确保这里的字符串和你侧边栏里的 menu_key 完全一致
+            elif menu_key == "意见反馈": 
                 self.sub_views[menu_key] = FeedbackPanel(self.main_container)
-            else:
+            elif menu_key == "AI智能分析":  # 💡 稳稳地插在中间
+                self.sub_views[menu_key] = AIAnalysisView(self.main_container)
+            else:                           # 💡 只有最后这一个兜底的 else
                 self.sub_views[menu_key] = PlaceholderView(self.main_container, module_name=menu_key)
             
+            # 统一给新生成的视图网格化挂载（只写一次即可，不用重复）
             self.sub_views[menu_key].grid(row=0, column=0, sticky="nsew")
         
-        # ... 后续逻辑
-
+        
         if menu_key == "历史记录":
             self.sub_views["历史记录"].refresh_data()
 
+        # 视图提升与切换
         view = self.sub_views[menu_key]
         view.tkraise()
-        
         self.current_view = view
 
     def run(self):

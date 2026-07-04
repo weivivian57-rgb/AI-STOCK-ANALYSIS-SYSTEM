@@ -1,12 +1,11 @@
 """
 dashboard.py
-系统核心工作区 - 首页概览面板
+系统核心工作区 - 首页概览面板（全新智能选股与多参数融合版）
 """
 
 import tkinter as tk
 from tkinter import messagebox
 import threading
-import re
 
 from ui.header import Header
 from ui.chart_view import ChartView
@@ -55,7 +54,6 @@ class Dashboard(tk.Frame):
 
         # ---------- 上半部分：8 个技术指标卡片 ----------
         metrics_container = tk.Frame(right_frame, bg=BG_APP)
-        # 注意：这里 fill=tk.X，只占上方所需空间
         metrics_container.pack(fill=tk.X, pady=(0, 10)) 
 
         tk.Label(
@@ -89,18 +87,17 @@ class Dashboard(tk.Frame):
         self._create_metric_cards(default_metrics)
 
         # ---------- 下半部分：AI 智能分析报告 ----------
-        # 恢复原有的 ReportPanel，并让它填满右侧下方剩余的所有空间
         self.report_panel = ReportPanel(right_frame)
         self.report_panel.pack(fill=tk.BOTH, expand=True)
 
     def _create_metric_cards(self, metrics):
-        """生成 8 个精致的指标卡片 (压缩了 pady 以节省垂直空间)"""
+        """生成 8 个精致的指标卡片"""
         for idx, item in enumerate(metrics):
             r = idx // 2
             c = idx % 2
             
             card = tk.Frame(self.grid_container, bg="#FFFFFF", bd=1, relief=tk.SOLID, highlightbackground="#E2E8F0")
-            card.grid(row=r, column=c, padx=4, pady=3, sticky="nsew") # pady=3 让8个卡片更紧凑
+            card.grid(row=r, column=c, padx=4, pady=3, sticky="nsew")
             
             tk.Label(card, text=item["title"], font=("Microsoft YaHei", 9), bg="#FFFFFF", fg=COLOR_TEXT_SUB).pack(pady=(6, 0))
             
@@ -109,49 +106,61 @@ class Dashboard(tk.Frame):
             
             self.metric_labels[item["key"]] = val_label
 
-    def run_analysis(self, stock_code):
-        stock_code = stock_code.strip()
-
-        if stock_code in self.reader.stock_map:
-            stock_code = self.reader.stock_map[stock_code]
-        else:
-            stock_code = stock_code.upper()
-
-        if stock_code.isdigit() and len(stock_code) == 6:
-            if stock_code.startswith(('6', '688', '900')):
-                stock_code = f"{stock_code}.SS"
-            else:
-                stock_code = f"{stock_code}.SZ"
-
-        if re.search(r'[\u4e00-\u9fa5]', stock_code):
-            messagebox.showwarning("查询失败", f"无法识别股票名称 '{stock_code}'。\n请尝试直接输入代码。")
+    def run_analysis(self, keyword, start_date=None, end_date=None):
+        keyword = keyword.strip()
+        if not keyword:
             return
+
+        yf_code, stock_name = self.reader.resolve_stock_code(keyword)
+
+        if not yf_code:
+            messagebox.showwarning("查询失败", f"未能检索到与 '{keyword}' 相关的股票。")
+            return
+
+        # 💡 [核心逻辑]：自动生成报告区间文案
+        # 如果 start_date 为 None，说明用户留空，默认就是过去5年
+        report_time_range = f"{start_date} 至 {end_date}" if start_date else "过去5年 (全量/稳定区间)"
 
         for lbl in self.metric_labels.values():
             lbl.config(text="...", fg=COLOR_TEXT_SUB)
             
-        # UI 提示：由于 report_panel 被恢复了，这里依然可以使用文本框做加载提示
         self.report_panel.text_report.delete(1.0, tk.END)
-        self.report_panel.text_report.insert(tk.END, f"正在获取 {stock_code} 数据并进行AI分析，请稍候...")
+        self.report_panel.text_report.insert(
+            tk.END, 
+            f"🚀 已识别：{stock_name} ({yf_code})\n⏳ 正在进行 [{report_time_range}] 的 AI 量化分析，请稍候..."
+        )
 
         def task():
             try:
-                stock = self.reader.download_data(stock_code)
+                stock = self.reader.download_data(yf_code, start=start_date, end=end_date)
+                stock.name = stock_name  
+                
+                # 💡 [重要补充]：将时间跨度信息塞进 stock 对象，或者直接传给 generator
+                # 这样 AI 在生成报告时就能准确知道它分析的是什么区间
+                stock.time_range = report_time_range 
+                
                 stock = self.analyzer.analyze(stock)
                 stock = self.predictor.predict(stock)
+                
+                # 💡 确保报告生成器可以读到这个跨度信息
                 report = self.generator.generate(stock)
 
                 self.after(0, self._update_ui, stock, report)
 
-                currency = "人民币" if stock_code.endswith((".SS", ".SZ")) else "美元"
-                self.reader.save_to_history(stock.code, stock.latest_price, currency)
+                currency = "人民币" if yf_code.endswith((".SS", ".SZ")) else ("港币" if yf_code.endswith(".HK") else "美元")
+                display_name = f"{stock_name} ({yf_code})"
+                self.reader.save_to_history(display_name, stock.latest_price, currency)
 
             except Exception as e:
-                self.after(0, lambda: messagebox.showerror("错误", f"分析失败:\n{str(e)}"))
+                err_msg = str(e)
+                self.after(0, lambda: messagebox.showerror("错误", f"分析失败:\n{err_msg}"))
                 self.after(0, lambda: self.report_panel.text_report.delete(1.0, tk.END))
+                
         threading.Thread(target=task, daemon=True).start()
 
     def _update_ui(self, stock, report):
+        df = stock.data
+        print(f"DEBUG: 接收到的数据起止时间: {df.index[0]} 至 {df.index[-1]}")
         """刷新图表、报告文本和 8 个指标卡片"""
         # 1. 刷新左侧图表
         self.chart_view.update_chart(stock)
