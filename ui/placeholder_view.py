@@ -1,32 +1,57 @@
 """
-placeholder_view.py
-系统占位视图组件 - 用于展示尚未完全实现的功能模块
+ui/placeholder_view.py
+系统占位视图 - 为尚未开发的模块提供统一的反馈界面
 """
 
 import tkinter as tk
-from ui.styles import *
+import os
 
 class PlaceholderView(tk.Frame):
-    """
-    通用功能建设中占位面板
-    """
-    def __init__(self, parent, module_name="该功能"):
-        super().__init__(parent, bg=BG_APP)
+    def __init__(self, parent, module_name):
+        super().__init__(parent, bg="#F1F5F9")
         
-        # 使用一个居中的 Frame 来包裹内容
-        content_frame = tk.Frame(self, bg=BG_PANEL, bd=1, relief=tk.SOLID)
-        content_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=600, height=400)
+        # 容器卡片
+        card = tk.Frame(self, bg="#F1F5F9", bd=0, highlightthickness=0)
+        card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=600, height=400)
         
-        # 图标/Emoji 提示
-        tk.Label(content_frame, text="🚧", font=("Arial", 64), bg=BG_PANEL).pack(pady=(50, 20))
+        # 1. 加载本地图片
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        icon_path = os.path.join(base_path, "assets", "settings.png")
         
-        # 模块名称
-        tk.Label(content_frame, text=f"【{module_name}】模块建设中", font=FONT_H1, bg=BG_PANEL, fg=COLOR_TEXT_MAIN).pack(pady=10)
+        self.icon_img = None
+        if os.path.exists(icon_path):
+            try:
+                # 只加载一次
+                self.icon_img = tk.PhotoImage(file=icon_path)
+                
+                self.icon_img = self.icon_img.subsample(2, 2)
+            except Exception as e:
+                print(f"⚠️ 图片加载错误: {e}")
+        else:
+            print(f"⚠️ 找不到路径: {icon_path}")
         
-        # 详细说明
-        desc_text = (
-            "该模块的核心业务逻辑已在底层的 services 层闭环。\n"
-            "UI 界面工程师正在全力渲染中，敬请期待！\n\n"
-            "您可以先前往【首页概览】体验核心功能。"
-        )
-        tk.Label(content_frame, text=desc_text, font=FONT_MAIN, bg=BG_PANEL, fg=COLOR_TEXT_SUB, justify=tk.CENTER).pack(pady=20)
+        # 2. 图片在上方 (居中)
+        if self.icon_img:
+            tk.Label(card, image=self.icon_img, bg="#F1F5F9").pack(pady=(60, 20))
+        else:
+            # 加载失败时的后备方案，确保模块界面依然可见
+            tk.Label(card, text="⚙️", font=("Arial", 60), bg="#F1F5F9", fg="#9CA3AF").pack(pady=(60, 20))
+        
+        # 3. 标题 (居中)
+        tk.Label(
+            card, 
+            text=f"【{module_name}】模块建设中", 
+            font=("Microsoft YaHei", 18, "bold"), 
+            bg="#F1F5F9", 
+            fg="#111827"
+        ).pack(pady=4)
+        
+        # 4. 提示文字 (居中)
+        tk.Label(
+            card, 
+            text="该模块的已经在努力写代码啦，等我更新哟！", 
+            font=("Microsoft YaHei", 12), 
+            bg="#F1F5F9", 
+            fg="#6B7280", 
+            justify=tk.CENTER
+        ).pack(pady=4)
